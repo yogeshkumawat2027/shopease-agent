@@ -1,7 +1,9 @@
 import { Router } from "express";
+import dotenv from "dotenv";
 
 
 import groq from "../services/groq.service.js";
+dotenv.config();
 
 import { getOrderStatus } from "../tools/order.tool.js";
 import { searchKnowledgeBase } from "../tools/knowledge.tool.js";
@@ -77,6 +79,39 @@ router.get("/groq", async (req, res) => {
       message: error.message,
     });
   }
+});
+
+router.get("/tool-test", async (req, res) => {
+  const response = await groq.chat.completions.create({
+    model: process.env.MODEL,
+    messages: [
+      {
+        role: "user",
+        content: "What is your return policy?",
+      },
+    ],
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "search_knowledge_base",
+          description:
+            "Search ShopEase FAQ articles.",
+          parameters: {
+            type: "object",
+            properties: {
+              query: {
+                type: "string",
+              },
+            },
+            required: ["query"],
+          },
+        },
+      },
+    ],
+  });
+
+  res.json(response);
 });
 
 export default router;

@@ -2,6 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import sessionRoutes from "./routes/sessionRoutes.js";
 
+// import { getOrderStatus } from "./tools/order.tool.js";
+
 dotenv.config();
 
 const app = express();
@@ -22,6 +24,16 @@ app.get("/health", (req, res) => {
     status: "ok",
   });
 });
+
+
+// app.get("/test/order/:orderId", (req, res) => {              //test to order status is working or not
+//   const result = getOrderStatus(req.params.orderId);
+
+//   res.json({
+//     success: true,
+//     data: result,
+//   });
+// });
 
 const PORT = process.env.PORT || 5000;
 

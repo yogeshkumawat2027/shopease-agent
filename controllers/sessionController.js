@@ -12,7 +12,7 @@ export function createSession(req, res) {
 	});
 }
 
-export function getSessionById(req, res) {
+export function getChatHistory(req, res) {  //get all sessions by sessionid
 	const { sessionId } = req.params;
 	const session = getSessionByIdService(sessionId);
 
@@ -32,7 +32,7 @@ export function getSessionById(req, res) {
 	});
 }
 
-export function addMessage(req, res) {
+export function sendChatMessage(req, res) {
 	const { sessionId } = req.params;
 	const { message, content, role } = req.body;
 	const text = message ?? content;

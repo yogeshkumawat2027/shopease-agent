@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { addMessage, createSession, getSessionById } from "../controllers/sessionController.js";
+import { sendChatMessage, createSession, getChatHistory } from "../controllers/sessionController.js";
 
 const router = Router();
 
 router.post("/", createSession);
-router.get("/:sessionId/chat", getSessionById);
-router.post("/:sessionId/chat", addMessage);
+router.get("/:sessionId/chat", getChatHistory);
+router.post("/:sessionId/chat", sendChatMessage);
 
 
 export default router;

@@ -1,4 +1,5 @@
 import { addMessageService, createSessionService, getSessionByIdService } from "../services/sessionService.js";
+import { runAgent } from "../services/agent.service.js";
 
 export function createSession(req, res) {
 	const session = createSessionService();
@@ -32,32 +33,51 @@ export function getChatHistory(req, res) {  //get all sessions by sessionid
 	});
 }
 
-export function sendChatMessage(req, res) {
-	const { sessionId } = req.params;
-	const { message, content, role } = req.body;
-	const text = message ?? content;
+export async function sendChatMessage(req, res) {
+  try {
+    const { sessionId } = req.params;
+    const { message, content } = req.body;
+    const text = message ?? content;
 
-	if (!text || !String(text).trim()) {
-		return res.status(400).json({
-			success: false,
-			message: "Message content is required",
-		});
-	}
+    if (!text || !String(text).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Message content is required",
+      });
+    }
 
-	const updatedSession = addMessageService(sessionId, String(text).trim(), role);
+    const session = getSessionByIdService(sessionId);
 
-	if (!updatedSession) {
-		return res.status(404).json({
-			success: false,
-			message: "Session not found",
-		});
-	}
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: "Session not found",
+      });
+    }
 
-	return res.status(201).json({
-		success: true,
-		message: "Message added successfully",
-		data: {
-			session: updatedSession,
-		},
-	});
+    addMessageService(sessionId, String(text).trim(), "user");
+
+    const reply = await runAgent([
+      {
+        role: "user",
+        content: String(text).trim(),
+      },
+    ]);
+
+    const updatedSession = addMessageService(sessionId, reply, "assistant");
+
+    return res.status(200).json({
+      success: true,
+      message: "Agent replied successfully",
+      data: {
+        reply,
+        session: updatedSession,
+      },
+    });
+  } catch (error) {
+    return res.status(503).json({
+      success: false,
+      message: "I'm having trouble right now. Please try again.",
+    });
+  }
 }

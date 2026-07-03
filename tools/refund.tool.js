@@ -1,15 +1,17 @@
 import ordersData from "../data/orders.json" with { type: "json" };
 
+const REFUND_WINDOW_DAYS = 30;
+
 export const checkRefundEligibility = (orderId) => {
   const order = ordersData.orders.find(
-    (item) => item.order_id.toLowerCase() === orderId.toLowerCase()
+    (item) => item.order_id.toLowerCase() === String(orderId).toLowerCase()
   );
 
   if (!order) {
     return {
       found: false,
       eligible: false,
-      reason: "Order not found",
+      message: "Order not found",
     };
   }
 
@@ -18,7 +20,10 @@ export const checkRefundEligibility = (orderId) => {
       found: true,
       eligible: false,
       order_id: order.order_id,
-      reason: "This order has already been refunded.",
+      status: order.status,
+      refund_date: order.refund_date || null,
+      refund_amount: order.refund_amount || null,
+      message: "This order has already been refunded.",
     };
   }
 
@@ -27,7 +32,9 @@ export const checkRefundEligibility = (orderId) => {
       found: true,
       eligible: false,
       order_id: order.order_id,
-      reason: "This order was cancelled, so it is not eligible for a refund through the return process.",
+      status: order.status,
+      cancelled_date: order.cancelled_date || null,
+      message: "This order was cancelled, so it is not eligible for a refund through the return process.",
     };
   }
 
@@ -37,35 +44,54 @@ export const checkRefundEligibility = (orderId) => {
       eligible: false,
       order_id: order.order_id,
       status: order.status,
-      reason: "Only delivered orders are eligible for refund checks.",
+      message: "Order must be delivered before it can be reviewed for a refund.",
+    };
+  }
+
+  if (!order.delivery_date) {
+    return {
+      found: true,
+      eligible: false,
+      order_id: order.order_id,
+      status: order.status,
+      delivery_date: null,
+      message: "Delivery date is missing, so refund eligibility cannot be determined.",
     };
   }
 
   const deliveryDate = new Date(order.delivery_date);
-  const today = new Date();
 
-  const diffMs = today - deliveryDate;
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays <= 30) {
+  if (Number.isNaN(deliveryDate.getTime())) {
     return {
       found: true,
-      eligible: true,
+      eligible: false,
       order_id: order.order_id,
       status: order.status,
       delivery_date: order.delivery_date,
-      days_since_delivery: diffDays,
-      reason: "This order is within the 30-day return window.",
+      message: "Invalid delivery date on the order.",
     };
   }
 
+  const today = new Date();
+  const millisecondsPerDay = 1000 * 60 * 60 * 24;
+
+  const daysSinceDelivery = Math.floor(
+    (today - deliveryDate) / millisecondsPerDay
+  );
+
+  const eligible =
+    daysSinceDelivery >= 0 && daysSinceDelivery <= REFUND_WINDOW_DAYS;
+
   return {
     found: true,
-    eligible: false,
+    eligible,
     order_id: order.order_id,
     status: order.status,
     delivery_date: order.delivery_date,
-    days_since_delivery: diffDays,
-    reason: "This order is outside the 30-day return window.",
+    refund_window_days: REFUND_WINDOW_DAYS,
+    days_since_delivery: daysSinceDelivery,
+    message: eligible
+      ? "This order is eligible for a refund."
+      : "The refund window has expired for this order.",
   };
 };

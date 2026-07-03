@@ -4,10 +4,8 @@ import { addMessage, createSession, getSessionById } from "../controllers/sessio
 const router = Router();
 
 router.post("/", createSession);
-
-router.get("/:sessionId", getSessionById);
-
-router.post("/:sessionId/messages", addMessage);
+router.get("/:sessionId/chat", getSessionById);
+router.post("/:sessionId/chat", addMessage);
 
 
 export default router;

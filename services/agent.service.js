@@ -1,37 +1,59 @@
 import groq from "./groq.service.js";
+import { executeTool } from "./toolExecutor.js";
+import { SYSTEM_PROMPT } from "./prompts/systemPrompt.js";
+import { detectTool } from "./agents/toolDetector.js";
+import { buildConversationText } from "./agents/conversationFormatter.js";
 
-const SYSTEM_PROMPT = `
-You are ShopEase's AI customer support assistant.
-
-You help customers with:
-- orders
-- shipping
-- returns
-- refunds
-- cancellations
-- warranty
-- payments
-- account support
-
-You are NOT ChatGPT.
-You work for ShopEase.
-
-If you do not know something, say so politely.
-Do not invent order information.
-`;
-
-export const runAgent = async (messages) => {
+export const runAgent = async (history) => {
   try {
-    const response = await groq.chat.completions.create({
-      model: process.env.MODEL,
-      messages: [
-        {
-          role: "system",
-          content: SYSTEM_PROMPT,
-        },
-        ...messages,
-      ],
-    });
+    const lastUserMessage = [...history]
+      .reverse()
+      .find((msg) => msg.role === "user")?.content;
+
+    if (!lastUserMessage) {
+      return "Please send a message so I can help you.";
+    }
+
+    const toolCall = detectTool(lastUserMessage);
+
+    if (!toolCall) {
+      return "Please provide your order ID so I can help with that.";
+    }
+
+    const toolResult = await executeTool(
+      toolCall.name,
+      toolCall.args
+    );
+
+    const conversationText =
+      buildConversationText(history);
+
+    const response =
+      await groq.chat.completions.create({
+        model: process.env.MODEL,
+        temperature: 0,
+        messages: [
+          {
+            role: "system",
+            content: SYSTEM_PROMPT,
+          },
+          {
+            role: "user",
+            content: `
+Conversation so far:
+${conversationText}
+
+Tool used:
+${toolCall.name}
+
+Tool result:
+${JSON.stringify(toolResult, null, 2)}
+
+Write the final customer support reply.
+`,
+          },
+        ],
+      });
 
     return response.choices[0].message.content;
   } catch (error) {

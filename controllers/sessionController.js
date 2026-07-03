@@ -57,14 +57,13 @@ export async function sendChatMessage(req, res) {
 
     addMessageService(sessionId, String(text).trim(), "user");
 
-    const reply = await runAgent([
-      {
-        role: "user",
-        content: String(text).trim(),
-      },
-    ]);
+    const updatedUserSession = getSessionByIdService(sessionId);
 
-    const updatedSession = addMessageService(sessionId, reply, "assistant");
+    const reply = await runAgent(updatedUserSession.messages);
+
+    addMessageService(sessionId, String(reply).trim(), "assistant");
+
+    const updatedSession = getSessionByIdService(sessionId);
 
     return res.status(200).json({
       success: true,

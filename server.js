@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import sessionRoutes from "./routes/sessionRoutes.js";
 
 dotenv.config();
 
@@ -13,6 +14,8 @@ app.get("/", (req, res) => {
     message: "ShopEase AI Agent API is running",
   });
 });
+
+app.use("/api/sessions", sessionRoutes);
 
 app.get("/health", (req, res) => {
   res.json({

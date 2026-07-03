@@ -134,6 +134,8 @@ Server runs on:
 
 ```txt
 http://localhost:5000
+
+can use base url -->  https://shopease-agent.onrender.com/  (deployed)
 ```
 
 ---

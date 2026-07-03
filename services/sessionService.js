@@ -16,3 +16,7 @@ export function createSessionService() {
   return session;
 }
 
+export function getSessionByIdService(sessionId) {
+	return sessions.get(sessionId) ?? null;
+}
+

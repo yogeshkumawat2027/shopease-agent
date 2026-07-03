@@ -2,7 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import sessionRoutes from "./routes/sessionRoutes.js";
 
-// import { getOrderStatus } from "./tools/order.tool.js";
+import { searchKnowledgeBase } from "./tools/knowledge.tool.js";
+import { checkRefundEligibility } from "./tools/refund.tool.js";
 
 dotenv.config();
 
@@ -26,6 +27,16 @@ app.get("/health", (req, res) => {
 });
 
 
+app.get("/test/refund/:orderId", (req, res) => {
+  const result = checkRefundEligibility(req.params.orderId);
+
+  res.json({
+    success: true,
+    data: result,
+  });
+});
+
+
 // app.get("/test/order/:orderId", (req, res) => {              //test to order status is working or not
 //   const result = getOrderStatus(req.params.orderId);
 
@@ -33,6 +44,11 @@ app.get("/health", (req, res) => {
 //     success: true,
 //     data: result,
 //   });
+// });
+
+// app.get("/test/faq/:query", (req, res) => {
+//   const result = searchKnowledgeBase(req.params.query);
+//   res.json(result);
 // });
 
 const PORT = process.env.PORT || 5000;

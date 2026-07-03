@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import sessionRoutes from "./routes/sessionRoutes.js";
 import testRoutes from "./routes/testroutes.js";
+import groq from "./services/groq.service.js";
 
 dotenv.config();
 
@@ -19,10 +20,26 @@ app.get("/", (req, res) => {
 app.use("/api/sessions", sessionRoutes);
 app.use("/test", testRoutes);
 
-app.get("/health", (req, res) => {
-  res.json({
-    status: "ok",
-  });
+app.get("/health", async (req, res) => {
+  try {
+    if (!process.env.GROQ_API_KEY || !process.env.MODEL) {
+      return res.status(503).json({
+        status: "error",
+        message: "LLM configuration is missing",
+      });
+    }
+
+    await groq.models.list();
+
+    return res.json({
+      status: "ok",
+    });
+  } catch (error) {
+    return res.status(503).json({
+      status: "error",
+      message: "LLM API is not reachable",
+    });
+  }
 });
 
 

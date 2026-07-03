@@ -59,7 +59,14 @@ export async function sendChatMessage(req, res) {
 
     const updatedUserSession = getSessionByIdService(sessionId);
 
-    const reply = await runAgent(updatedUserSession.messages);
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("AGENT_TIMEOUT")), 30000);
+    });
+
+    const reply = await Promise.race([
+      runAgent(updatedUserSession.messages),
+      timeoutPromise,
+    ]);
 
     addMessageService(sessionId, String(reply).trim(), "assistant");
 
@@ -74,6 +81,13 @@ export async function sendChatMessage(req, res) {
       },
     });
   } catch (error) {
+    if (error.message === "AGENT_TIMEOUT") {
+      return res.status(504).json({
+        success: false,
+        message: "The agent took too long to respond. Please try again.",
+      });
+    }
+
     return res.status(503).json({
       success: false,
       message: "I'm having trouble right now. Please try again.",

@@ -18,7 +18,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/sessions", sessionRoutes);
-app.use("/test", testRoutes);
+// app.use("/test", testRoutes);
 
 app.get("/health", async (req, res) => {
   try {

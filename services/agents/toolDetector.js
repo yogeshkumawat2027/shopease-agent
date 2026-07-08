@@ -1,53 +1,69 @@
-export const detectTool = (message) => {
-  const text = message.toLowerCase();
+import groq from "../groq.service.js";
+import { tools } from "../toolDefinitions.js";
 
-  const orderMatch = message.match(/ORD-\d+/i);
-  const orderId = orderMatch?.[0]?.toUpperCase();
+const TOOL_ROUTER_PROMPT = `
+You are a support tool router for ShopEase.
 
-  if (
-    text.includes("human") ||
-    text.includes("agent") ||
-    text.includes("representative")
-  ) {
-    return {
-      name: "escalate_to_human",
-      args: {
-        summary: message,
-        priority: "normal",
+Choose the best action for the latest customer message using the available tools.
+
+Rules:
+- Decide support scope by understanding the meaning of the message, not by keyword matching.
+- Only handle ShopEase customer support questions.
+- Use a tool only when it clearly helps answer the customer.
+- If the customer asks about an order or refund and the order ID is missing, ask a short clarifying question instead of calling a tool.
+- If the customer wants a human, call escalate_to_human.
+- If the customer asks a general support question, call search_knowledge_base.
+- If the question is outside ShopEase support, return a short refusal instead of answering it.
+- Return either a tool call or a short reply. Do not do both.
+`;
+
+export const detectTool = async (history, lastUserMessage) => {
+  const conversationText = history
+    .slice(-8)
+    .map(
+      (message) =>
+        `${message.role.toUpperCase()}: ${message.content}`
+    )
+    .join("\n");
+
+  const response = await groq.chat.completions.create({
+    model: process.env.MODEL,
+    temperature: 0,
+    messages: [
+      {
+        role: "system",
+        content: TOOL_ROUTER_PROMPT,
       },
-    };
-  }
+      {
+        role: "user",
+        content: `Conversation so far:\n${conversationText}\n\nLatest customer message:\n${lastUserMessage}`,
+      },
+    ],
+    tools,
+    tool_choice: "auto",
+  });
 
-  if (text.includes("refund")) {
-    if (!orderId) return null;
+  const message = response.choices[0].message;
+  const toolCall = message.tool_calls?.[0];
+
+  if (toolCall) {
+    let args = {};
+
+    try {
+      args = JSON.parse(toolCall.function.arguments || "{}");
+    } catch {
+      args = {};
+    }
 
     return {
-      name: "check_refund_eligibility",
-      args: {
-        order_id: orderId,
-      },
-    };
-  }
-
-  if (
-    text.includes("order") ||
-    text.includes("tracking") ||
-    text.includes("where is")
-  ) {
-    if (!orderId) return null;
-
-    return {
-      name: "get_order_status",
-      args: {
-        order_id: orderId,
-      },
+      type: "tool",
+      name: toolCall.function.name,
+      args,
     };
   }
 
   return {
-    name: "search_knowledge_base",
-    args: {
-      query: message,
-    },
+    type: "reply",
+    message: message.content?.trim() || "I'm here to help with ShopEase support.",
   };
 };

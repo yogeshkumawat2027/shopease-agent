@@ -14,9 +14,19 @@ export const runAgent = async (history) => {
       return "Please send a message so I can help you.";
     }
 
-    const toolCall = detectTool(lastUserMessage);
+    const decision = await detectTool(history, lastUserMessage);
 
-    if (!toolCall) {
+    if (decision.type === "reply") {
+      return decision.message;
+    }
+
+    const toolCall = decision;
+
+    if (
+      (toolCall.name === "get_order_status" ||
+        toolCall.name === "check_refund_eligibility") &&
+      !toolCall.args?.order_id
+    ) {
       return "Please provide your order ID so I can help with that.";
     }
 

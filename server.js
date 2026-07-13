@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import sessionRoutes from "./routes/sessionRoutes.js";
 import testRoutes from "./routes/testroutes.js";
 import groq from "./services/groq.service.js";
+import { warmKnowledgeBase } from "./services/rag.service.js";
 
 dotenv.config();
 
@@ -42,7 +43,15 @@ app.get("/health", async (req, res) => {
   }
 });
 
-
+// Warm up the RAG knowledge base on startup
+warmKnowledgeBase()
+  .catch((error) => {
+    console.error(
+      "Failed to warm ShopEase RAG knowledge base:",
+      error
+    );
+    // Do not prevent server from starting if warm-up fails
+  });
 
 const PORT = process.env.PORT || 5000;
 

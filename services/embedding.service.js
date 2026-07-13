@@ -6,10 +6,7 @@ const EMBEDDING_MODEL =
 
 let extractorPromise;
 
-/**
- * Get or initialize the embedding pipeline.
- * Lazy loads the model only once and reuses the instance.
- */
+
 const getExtractor = () => {
   if (!extractorPromise) {
     extractorPromise = pipeline(
@@ -21,11 +18,6 @@ const getExtractor = () => {
   return extractorPromise;
 };
 
-/**
- * Generate a normalized embedding for input text.
- * @param {string} text - The text to embed
- * @returns {Promise<number[]>} A normalized embedding vector
- */
 export const createEmbedding = async (text) => {
   if (!text || typeof text !== "string" || !text.trim()) {
     throw new Error("Text is required for embedding");

@@ -1,29 +1,50 @@
-import faqsData from "../data/faqs.json" with { type: "json" };
+import { searchRelevantArticles } from "../services/rag.service.js";
 
-export const searchKnowledgeBase = (query) => {
-  const q = query.toLowerCase();
+export const searchKnowledgeBase = async (query) => {
+  console.log("RAG query:", query);
 
-  const results = faqsData.articles.filter((article) => {
-    const titleMatch =
-      article.title.toLowerCase().includes(q);
+  try {
+    const results = await searchRelevantArticles(query, {
+      limit: 3,
+      minScore: 0.2,
+    });
 
-    const contentMatch =
-      article.content.toLowerCase().includes(q);
-
-    const categoryMatch =
-      article.category.toLowerCase().includes(q);
-
-    const tagMatch = article.tags.some((tag) =>
-      tag.toLowerCase().includes(q)
+    console.log(
+      "RAG results:",
+      results.map((item) => ({
+        id: item.id,
+        title: item.title,
+        score: item.score,
+      }))
     );
 
-    return (
-      titleMatch ||
-      contentMatch ||
-      categoryMatch ||
-      tagMatch
-    );
-  });
+    if (results.length === 0) {
+      return {
+        success: true,
+        found: false,
+        query,
+        message:
+          "No sufficiently relevant ShopEase policy or FAQ article was found.",
+        results: [],
+      };
+    }
 
-  return results.slice(0, 3);
+    return {
+      success: true,
+      found: true,
+      query,
+      results,
+    };
+  } catch (error) {
+    console.error("RAG search failed:", error);
+
+    return {
+      success: false,
+      found: false,
+      query,
+      error: "KNOWLEDGE_SEARCH_FAILED",
+      message: "Knowledge-base search failed.",
+      results: [],
+    };
+  }
 };

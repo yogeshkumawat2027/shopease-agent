@@ -4,16 +4,18 @@ export const tools = [
     function: {
       name: "search_knowledge_base",
       description:
-        "Search ShopEase FAQ articles for shipping, returns, refunds, cancellations, warranty, payments, account, and support questions.",
+        "Retrieve relevant ShopEase policy and FAQ information for general questions about shipping, delivery, returns, refunds, cancellations, warranty, payments, accounts, and support. Do not use this tool for a specific order status or order-specific refund eligibility.",
       parameters: {
         type: "object",
         properties: {
           query: {
             type: "string",
-            description: "Customer question or keyword to search in FAQ articles",
+            description:
+              "A complete standalone search query preserving the customer's product, issue, and policy-related details.",
           },
         },
         required: ["query"],
+        additionalProperties: false,
       },
     },
   },
@@ -32,6 +34,7 @@ export const tools = [
           },
         },
         required: ["order_id"],
+        additionalProperties: false,
       },
     },
   },
@@ -50,6 +53,7 @@ export const tools = [
           },
         },
         required: ["order_id"],
+        additionalProperties: false,
       },
     },
   },
@@ -73,6 +77,7 @@ export const tools = [
           },
         },
         required: ["summary", "priority"],
+        additionalProperties: false,
       },
     },
   },

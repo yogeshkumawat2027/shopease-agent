@@ -50,10 +50,7 @@ const buildKnowledgeIndex = async () => {
   return index;
 };
 
-/**
- * Get or build the knowledge index.
- * Uses promise-based caching to prevent multiple concurrent builds.
- */
+
 const getKnowledgeIndex = () => {
   if (!knowledgeIndexPromise) {
     knowledgeIndexPromise = buildKnowledgeIndex();
@@ -62,10 +59,7 @@ const getKnowledgeIndex = () => {
   return knowledgeIndexPromise;
 };
 
-/**
- * Compute cosine similarity between two vectors.
- * For normalized embeddings, dot product also works but we use cosine for clarity.
- */
+
 const cosineSimilarity = (vectorA, vectorB) => {
   if (vectorA.length !== vectorB.length) {
     throw new Error("Vector dimensions must match");
@@ -91,10 +85,6 @@ const cosineSimilarity = (vectorA, vectorB) => {
   return dotProduct / (magnitudeA * magnitudeB);
 };
 
-/**
- * Warm up the knowledge base by initializing the embedding model and building the index.
- * Call this when the server starts to avoid delays on the first query.
- */
 export const warmKnowledgeBase = async () => {
   try {
     await getKnowledgeIndex();
